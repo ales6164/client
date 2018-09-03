@@ -8,12 +8,12 @@ import (
 )
 
 type Session struct {
-	CreatedAt time.Time
-	ExpiresAt time.Time
-	IsBlocked bool
-	Scopes    []string
-	Identity  *datastore.Key
-	User      *datastore.Key
+	CreatedAt time.Time      `json:"createdAt"`
+	ExpiresAt time.Time      `json:"expiresAt"`
+	IsBlocked bool           `json:"-"`
+	Scopes    []string       `json:"-"`
+	Identity  *datastore.Key `json:"-"`
+	User      *datastore.Key `json:"-"`
 }
 
 type Claims struct {
@@ -48,7 +48,7 @@ func NewSession(ctx context.Context, identity *Identity, roleProvider RoleProvid
 		ExpiresAt: expiresAt,
 		Identity:  identity.Key,
 		User:      identity.UserKey,
-		Scopes:    scopes,
+		Scopes:    tokenScopes,
 	}
 	key := datastore.NewIncompleteKey(ctx, SessionKind, nil)
 	key, err = datastore.Put(ctx, key, session)
