@@ -44,6 +44,7 @@ func NewIdentity(ctx context.Context, ip string, userKey *datastore.Key, name st
 }
 
 func getIdentity(ctx context.Context, key *datastore.Key) (identity *Identity, err error) {
+	identity = new(Identity)
 	err = datastore.Get(ctx, key, identity)
 	identity.Key = key
 	return identity, err

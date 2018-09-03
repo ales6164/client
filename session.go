@@ -16,9 +16,31 @@ type Session struct {
 	User      *datastore.Key
 }
 
+type Claims struct {
+	*jwt.StandardClaims
+}
+
+type RoleProvider interface {
+	Roles() map[string][]string
+}
+
 const SessionKind = "_clientSession"
 
-func NewSession(ctx context.Context, identity *Identity, scopes ...string) (session *Session, token *jwt.Token, err error) {
+func NewSession(ctx context.Context, identity *Identity, roleProvider RoleProvider, scopes ...string) (session *Session, token *jwt.Token, err error) {
+	var tokenScopes []string
+	var scopeMap = map[string]interface{}{}
+	for _, roles := range roleProvider.Roles() {
+		for _, scope := range roles {
+			scopeMap[scope] = true
+		}
+	}
+	for _, scope := range scopes {
+		scopeMap[scope] = true
+	}
+	for scope := range scopeMap {
+		tokenScopes = append(tokenScopes, scope)
+	}
+
 	createdAt := time.Now()
 	expiresAt := createdAt.Add(time.Hour * time.Duration(72))
 	session = &Session{

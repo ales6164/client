@@ -11,12 +11,11 @@ import (
 )
 
 type User struct {
-	Key       *datastore.Key         `datastore:"-" json:"-"`
+	Key       *datastore.Key         `json:"-"`
 	Id        string                 `json:"id"`
 	CreatedAt time.Time              `json:"createdAt"`
 	UpdatedAt time.Time              `json:"updatedAt"`
 	Scopes    []string               `json:"scopes"`
-	Roles     []string               `json:"roles"` // roles are groups of scopes
 	Profile   map[string]interface{} `json:"profile"`
 }
 
@@ -28,14 +27,13 @@ const (
 	UserKindName = "_user"
 )
 
-func NewUser(ctx context.Context, name string, profile map[string]interface{}, roles []string, scopes ...string) (user *User, err error) {
+func NewUser(ctx context.Context, name string, profile map[string]interface{}, scopes ...string) (user *User, err error) {
 	createdAt := time.Now()
 	user = &User{
 		Id:        name,
 		CreatedAt: createdAt,
 		UpdatedAt: createdAt,
 		Scopes:    scopes,
-		Roles:     roles,
 		Profile:   profile,
 	}
 	user.Key = datastore.NewKey(ctx, UserKindName, name, 0, nil)
@@ -52,6 +50,7 @@ func NewUser(ctx context.Context, name string, profile map[string]interface{}, r
 }
 
 func getUser(ctx context.Context, key *datastore.Key) (user *User, err error) {
+	user = new(User)
 	err = datastore.Get(ctx, key, user)
 	user.Key = key
 	return user, err
@@ -67,10 +66,8 @@ func (u *User) Load(ps []datastore.Property) error {
 			u.CreatedAt = p.Value.(time.Time)
 		case "UpdatedAt":
 			u.UpdatedAt = p.Value.(time.Time)
-		case "Roles":
-			u.Roles = p.Value.([]string)
 		case "Scopes":
-			u.Scopes = p.Value.([]string)
+			u.Scopes = append(u.Scopes, p.Value.(string))
 		default:
 			// profile map
 			var holder = u.Profile
@@ -95,8 +92,13 @@ func (u *User) Save() ([]datastore.Property, error) {
 		{Name: "Id", Value: u.Id},
 		{Name: "CreatedAt", Value: u.CreatedAt},
 		{Name: "UpdatedAt", Value: u.UpdatedAt},
-		{Name: "Roles", Value: u.Roles},
-		{Name: "Scopes", Value: u.Scopes},
+	}
+	for _, scope := range u.Scopes {
+		ps = append(ps, datastore.Property{
+			Multiple: true,
+			Name:     "Scopes",
+			Value:    scope,
+		})
 	}
 	ps = append(ps, mapToDatastoreProperties(u.Profile)...)
 	return ps, nil

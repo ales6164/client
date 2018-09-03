@@ -5,7 +5,9 @@ import (
 	gContext "github.com/gorilla/context"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 	"net/http"
+	"reflect"
 	"time"
 )
 
@@ -75,6 +77,7 @@ func New(ctx context.Context, r *http.Request) *Client {
 				}
 			} else {
 				c.Log(LogInvalidClaims)
+				c.Log(reflect.TypeOf(token.Claims).String())
 			}
 		} else {
 			c.Log(LogInvalidToken)
@@ -93,4 +96,5 @@ func (c *Client) Log(msg string) {
 	if c.key != nil {
 		datastore.Put(c.context, c.key, c)
 	}
+	log.Infof(c.context, "logged: %s", msg)
 }
