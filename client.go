@@ -25,6 +25,7 @@ type Client struct {
 	IsAuthenticated bool
 	IsBlocked       bool
 	IsExpired       bool
+	IsPublic        bool // true if accessed via an unprotected route
 }
 
 const ClientRequestKind = "_clientRequest"
@@ -84,6 +85,7 @@ func New(ctx context.Context, r *http.Request) *Client {
 		}
 	} else {
 		c.Log(LogNoAuthHeader)
+		c.IsPublic = true
 	}
 
 	c.key = datastore.NewIncompleteKey(c.context, ClientRequestKind, nil)
